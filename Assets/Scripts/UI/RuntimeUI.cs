@@ -8,6 +8,9 @@ using UnityEngine.UI;
 /// </summary>
 public static class RuntimeUI
 {
+    /// <summary>9-slice border (pixels) of the rounded rectangle sprite.</summary>
+    public const int RoundedRectBorder = 34;
+
     private static Sprite _circle;
     private static Sprite _roundedRect;
     private static Sprite _triangle;
@@ -16,7 +19,7 @@ public static class RuntimeUI
     {
         get
         {
-            if (_circle == null) _circle = CreateRoundedRectSprite(128, 64, 0);
+            if (_circle == null) _circle = ToSprite(CreateCircleTexture(false), 0);
             return _circle;
         }
     }
@@ -26,7 +29,7 @@ public static class RuntimeUI
     {
         get
         {
-            if (_roundedRect == null) _roundedRect = CreateRoundedRectSprite(96, 32, 34);
+            if (_roundedRect == null) _roundedRect = ToSprite(CreateRoundedRectTexture(false), RoundedRectBorder);
             return _roundedRect;
         }
     }
@@ -36,7 +39,7 @@ public static class RuntimeUI
     {
         get
         {
-            if (_triangle == null) _triangle = CreateTriangleSprite(96);
+            if (_triangle == null) _triangle = ToSprite(CreateArrowTexture(false), 0);
             return _triangle;
         }
     }
@@ -108,14 +111,41 @@ public static class RuntimeUI
         return label;
     }
 
-    private static Sprite CreateRoundedRectSprite(int size, int radius, int border)
+    // ---------------------------------------------------------------- Procedural textures
+    // Public so the editor setup tool can save them as PNG assets you can restyle or replace.
+
+    public static Texture2D CreateRoundedRectTexture(bool keepReadable) => RoundedRectTexture(96, 32, keepReadable);
+    public static Texture2D CreateCircleTexture(bool keepReadable) => RoundedRectTexture(128, 64, keepReadable);
+
+    /// <summary>Triangle pointing right.</summary>
+    public static Texture2D CreateArrowTexture(bool keepReadable)
     {
-        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        const int size = 96;
+        Texture2D texture = NewTexture(size, "RuntimeUI_Arrow");
+
+        var pixels = new Color32[size * size];
+        var a = new Vector2(size * 0.2f, size * 0.12f);
+        var b = new Vector2(size * 0.2f, size * 0.88f);
+        var c = new Vector2(size * 0.88f, size * 0.5f);
+
+        for (int y = 0; y < size; y++)
         {
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp,
-            name = "RuntimeUI_Rounded"
-        };
+            for (int x = 0; x < size; x++)
+            {
+                var p = new Vector2(x + 0.5f, y + 0.5f);
+                float d = Mathf.Max(EdgeDistance(p, a, b), Mathf.Max(EdgeDistance(p, b, c), EdgeDistance(p, c, a)));
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(0.5f - d) * 255f));
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, !keepReadable);
+        return texture;
+    }
+
+    private static Texture2D RoundedRectTexture(int size, int radius, bool keepReadable)
+    {
+        Texture2D texture = NewTexture(size, "RuntimeUI_Rounded");
 
         var pixels = new Color32[size * size];
         float half = size * 0.5f;
@@ -130,48 +160,30 @@ public static class RuntimeUI
                 float py = Mathf.Abs(y + 0.5f - half) - inner;
                 float outside = new Vector2(Mathf.Max(px, 0f), Mathf.Max(py, 0f)).magnitude;
                 float distance = outside + Mathf.Min(Mathf.Max(px, py), 0f) - radius;
-                byte alpha = (byte)(Mathf.Clamp01(0.5f - distance) * 255f);
-                pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(0.5f - distance) * 255f));
             }
         }
 
         texture.SetPixels32(pixels);
-        texture.Apply(false, true);
-
-        var borders = new Vector4(border, border, border, border);
-        return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0,
-            SpriteMeshType.FullRect, borders);
+        texture.Apply(false, !keepReadable);
+        return texture;
     }
 
-    private static Sprite CreateTriangleSprite(int size)
+    private static Texture2D NewTexture(int size, string name)
     {
-        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        return new Texture2D(size, size, TextureFormat.RGBA32, false)
         {
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp,
-            name = "RuntimeUI_Triangle"
+            name = name
         };
+    }
 
-        var pixels = new Color32[size * size];
-        // Points of a right-facing triangle with some padding.
-        var a = new Vector2(size * 0.2f, size * 0.12f);
-        var b = new Vector2(size * 0.2f, size * 0.88f);
-        var c = new Vector2(size * 0.88f, size * 0.5f);
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                var p = new Vector2(x + 0.5f, y + 0.5f);
-                float d = Mathf.Max(EdgeDistance(p, a, b), Mathf.Max(EdgeDistance(p, b, c), EdgeDistance(p, c, a)));
-                byte alpha = (byte)(Mathf.Clamp01(0.5f - d) * 255f);
-                pixels[y * size + x] = new Color32(255, 255, 255, alpha);
-            }
-        }
-
-        texture.SetPixels32(pixels);
-        texture.Apply(false, true);
-        return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+    private static Sprite ToSprite(Texture2D texture, int border)
+    {
+        var borders = new Vector4(border, border, border, border);
+        return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0,
+            SpriteMeshType.FullRect, borders);
     }
 
     // Signed distance to the line through a->b; positive = outside for the a,b,c order used above.

@@ -1,6 +1,6 @@
 # Mzansi Rush – refactor, bug fixes, game feel & mobile support
 
-Branch: `claude/mobile-refactor`. Scenes and prefabs keep working as-is: every script kept its GUID, every
+Branch: `mobile-refactor`. Scenes and prefabs keep working as-is: every script kept its GUID, every
 serialized reference still resolves, and every button binding still points at an existing method.
 Runtime-only systems (touch controls, camera feel, world scroller, save system) create themselves, so
 **no scene setup is required**.
@@ -116,3 +116,21 @@ controls appear and can be used with the mouse. You can also force them with `Ta
 - Set a package name and app name in Player Settings (they are still `DefaultCompany` / `Racer`).
 - IL2CPP + ARM64 is already selected (required by Google Play).
 - The legacy `Destroyer` objects and the unused `Assets/Old` folder can be deleted.
+
+## Update 2 – editable UI and touch controls in the editor
+
+- **Run summary, score popups and touch controls are now normal scene objects you can lay out yourself.**
+  With GameLoop open, run **Tools > Mzansi Rush > Create Editable Game UI** once, then move/restyle the new
+  objects and save the scene. They are assigned on the UIController (new optional fields). Anything left
+  unassigned still falls back to the runtime default.
+  - Run summary: separate *Reason*, *Fare* and *Best* texts under the Death Screen (grouped under `RunSummary`),
+    plus an optional *New Best Badge* object. Wording is editable on the UIController
+    (`crashedMessage`, `gaveUpMessage`, `fareFormat`, `bestFormat`, `newBestMessage`).
+  - Score popups: `ScorePopupTemplate` next to the score – put it where popups should start.
+  - Touch controls: a `MobileControls` object in the UI canvas. Button sprites are saved to
+    `Assets/UI/TouchControls` so you can replace them; each button's Image colour is its idle colour and
+    `TouchButton.pressedColor` its pressed colour.
+- **Fixed: touch controls didn't appear in the Device Simulator.** The simulator only simulates the
+  `UnityEngine.Device` APIs, so mobile detection and the safe area now use those.
+- **Show In Editor** toggle on `MobileControls` shows the controls in the normal Game view (usable with the mouse).
+- Touch buttons now read input state through the Input System as well, so holding works in the simulator.

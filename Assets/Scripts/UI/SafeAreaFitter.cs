@@ -1,8 +1,11 @@
 using UnityEngine;
+// UnityEngine.Device.Screen matches UnityEngine.Screen in builds, and reports the simulated phone
+// (notch, cut-outs) in the editor's Device Simulator.
+using DeviceScreen = UnityEngine.Device.Screen;
 
 /// <summary>
 /// Shrinks a full-screen RectTransform to the device safe area so UI never sits under a notch,
-/// camera cut-out or rounded corner.
+/// camera cut-out or rounded corner. Put your touch controls (or any edge-hugging UI) inside it.
 /// </summary>
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaFitter : MonoBehaviour
@@ -19,7 +22,9 @@ public class SafeAreaFitter : MonoBehaviour
 
     private void Update()
     {
-        if (_lastSafeArea != Screen.safeArea || _lastScreenSize.x != Screen.width || _lastScreenSize.y != Screen.height)
+        if (_lastSafeArea != DeviceScreen.safeArea ||
+            _lastScreenSize.x != DeviceScreen.width ||
+            _lastScreenSize.y != DeviceScreen.height)
         {
             Apply();
         }
@@ -27,18 +32,21 @@ public class SafeAreaFitter : MonoBehaviour
 
     private void Apply()
     {
-        Rect safe = Screen.safeArea;
-        _lastSafeArea = safe;
-        _lastScreenSize = new Vector2Int(Screen.width, Screen.height);
+        Rect safe = DeviceScreen.safeArea;
+        int width = DeviceScreen.width;
+        int height = DeviceScreen.height;
 
-        if (Screen.width <= 0 || Screen.height <= 0) return;
+        _lastSafeArea = safe;
+        _lastScreenSize = new Vector2Int(width, height);
+
+        if (width <= 0 || height <= 0) return;
 
         Vector2 min = safe.position;
         Vector2 max = safe.position + safe.size;
-        min.x /= Screen.width;
-        min.y /= Screen.height;
-        max.x /= Screen.width;
-        max.y /= Screen.height;
+        min.x /= width;
+        min.y /= height;
+        max.x /= width;
+        max.y /= height;
 
         _rect.anchorMin = min;
         _rect.anchorMax = max;

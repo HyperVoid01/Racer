@@ -3,17 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 /// <summary>
 /// A hold-able on-screen button that supports multi-touch (steer and accelerate at the same time) and,
 /// optionally, sliding a thumb from one button onto another (e.g. left to right steering) without lifting it.
+/// Style it like any other UI: the Image colour you set in the editor is the idle colour.
 /// </summary>
+[RequireComponent(typeof(Graphic))]
 public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Tooltip("Pressing starts when a finger that is already down slides onto the button.")]
     public bool slideToActivate = true;
 
-    public Color idleColor = new Color(0f, 0f, 0f, 0.35f);
+    [Tooltip("Colour while held. The idle colour is whatever colour the Image has in the editor.")]
     public Color pressedColor = new Color(1f, 0.82f, 0.15f, 0.75f);
     [Range(0.8f, 1f)] public float pressedScale = 0.93f;
 
@@ -24,6 +29,7 @@ public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     private readonly HashSet<int> _pointers = new HashSet<int>();
     private Graphic _graphic;
+    private Color _idleColor;
     private Vector3 _restScale = Vector3.one;
 
     public bool IsHeld => _pointers.Count > 0;
@@ -31,8 +37,8 @@ public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private void Awake()
     {
         _graphic = GetComponent<Graphic>();
+        _idleColor = _graphic != null ? _graphic.color : Color.white;
         _restScale = transform.localScale;
-        ApplyVisual();
     }
 
     private void OnDisable()
@@ -42,8 +48,9 @@ public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     private void LateUpdate()
     {
-        // Safety net: if every finger is up, nothing can be held (some platforms skip the final exit/up event).
-        if (IsHeld && Input.touchCount == 0 && !Input.GetMouseButton(0)) ReleaseAll();
+        // Safety net: if no finger or mouse button is down, nothing can be held
+        // (e.g. sliding onto a button with the mouse and releasing never sends it an "up").
+        if (IsHeld && !AnyPointerDown()) ReleaseAll();
     }
 
     public void OnPointerDown(PointerEventData eventData) => AddPointer(eventData.pointerId);
@@ -84,13 +91,30 @@ public class TouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     private void OnHeldChanged(bool held)
     {
-        ApplyVisual();
+        if (_graphic != null) _graphic.color = held ? pressedColor : _idleColor;
+        transform.localScale = _restScale * (held ? pressedScale : 1f);
         HeldChanged?.Invoke(held);
     }
 
-    private void ApplyVisual()
+    private static bool AnyPointerDown()
     {
-        if (_graphic != null) _graphic.color = IsHeld ? pressedColor : idleColor;
-        transform.localScale = _restScale * (IsHeld ? pressedScale : 1f);
+#if ENABLE_INPUT_SYSTEM
+        // The Input System sees the Device Simulator's touches; the legacy Input class may not.
+        Touchscreen touchscreen = Touchscreen.current;
+        if (touchscreen != null)
+        {
+            foreach (var touch in touchscreen.touches)
+            {
+                if (touch.press.isPressed) return true;
+            }
+        }
+
+        Mouse mouse = Mouse.current;
+        if (mouse != null && mouse.leftButton.isPressed) return true;
+#endif
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (Input.touchCount > 0 || Input.GetMouseButton(0)) return true;
+#endif
+        return false;
     }
 }

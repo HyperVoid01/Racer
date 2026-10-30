@@ -9,10 +9,14 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class Bootstrap : MonoBehaviour
 {
+    /// <summary>
+    /// True on phones/tablets. Uses UnityEngine.Device so the editor's Device Simulator counts as mobile
+    /// (the simulator only fakes the UnityEngine.Device versions of Application/Screen/SystemInfo).
+    /// </summary>
     public static bool IsMobile =>
-        Application.isMobilePlatform ||
-        Application.platform == RuntimePlatform.Android ||
-        Application.platform == RuntimePlatform.IPhonePlayer;
+        UnityEngine.Device.Application.isMobilePlatform ||
+        UnityEngine.Device.Application.platform == RuntimePlatform.Android ||
+        UnityEngine.Device.Application.platform == RuntimePlatform.IPhonePlayer;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()

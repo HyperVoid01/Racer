@@ -7,6 +7,10 @@ using UnityEngine.SceneManagement;
 /// In-game HUD, pause screen and game over screen.
 /// Text only updates when its value changes, and uses TMP's SetText with numeric arguments,
 /// so the HUD produces no garbage per frame (important on mobile).
+///
+/// The run summary, score popups and touch controls are normal scene objects you can lay out yourself:
+/// run Tools > Mzansi Rush > Create Editable Game UI once in this scene to create and assign them.
+/// Anything left unassigned falls back to a default built at runtime.
 /// </summary>
 public class UIController : MonoBehaviour
 {
@@ -23,16 +27,35 @@ public class UIController : MonoBehaviour
     [SerializeField] GameObject hud;
     [SerializeField] GameObject radio;
 
+    [Header("Run summary (game over screen) - optional")]
+    [SerializeField] private TextMeshProUGUI gameOverReasonText;
+    [SerializeField] private TextMeshProUGUI fareText;
+    [SerializeField] private TextMeshProUGUI bestText;
+    [Tooltip("Optional object shown only on a new high score (e.g. a badge or banner).")]
+    [SerializeField] private GameObject newBestBadge;
+    [SerializeField] private string crashedMessage = "You crashed!";
+    [SerializeField] private string gaveUpMessage = "Your passengers gave up!";
+    [Tooltip("{0} is replaced with the fare.")]
+    [SerializeField] private string fareFormat = "FARE  R{0}";
+    [Tooltip("{0} is replaced with the best score.")]
+    [SerializeField] private string bestFormat = "BEST  R{0}";
+    [SerializeField] private string newBestMessage = "NEW BEST!";
+
+    [Header("Score popups - optional")]
+    [Tooltip("A disabled text placed where popups should start. Copies of it float up when the score changes.")]
+    [SerializeField] private TextMeshProUGUI scorePopupTemplate;
+    [SerializeField] private int popupPoolSize = 6;
+    [SerializeField] private float popupRise = 70f;
+    [SerializeField] private float popupDuration = 0.8f;
+
+    [Header("Touch controls - optional")]
+    [SerializeField] private MobileControls mobileControls;
+
     [Header("Feedback colours")]
     [SerializeField] private Color normalColor = Color.white;
     [SerializeField] private Color warningColor = new Color(1f, 0.8f, 0.1f);
     [SerializeField] private Color lateColor = new Color(1f, 0.25f, 0.2f);
     [SerializeField] private Color gainColor = new Color(0.35f, 1f, 0.45f);
-
-    [Header("Score popups")]
-    [SerializeField] private int popupPoolSize = 6;
-    [SerializeField] private float popupRise = 70f;
-    [SerializeField] private float popupDuration = 0.8f;
 
     private int _shownKmh = int.MinValue;
     private int _shownTimerCentis = int.MinValue;
@@ -40,10 +63,11 @@ public class UIController : MonoBehaviour
     private bool? _timerVisible;
     private int _timerColorState = -1;
 
-    private TextMeshProUGUI _summaryText;
     private TextMeshProUGUI[] _popups;
+    private Vector2 _popupStart;
     private int _nextPopup;
-    private MobileControls _mobileControls;
+    private MobileControls _runtimeControls;
+    private TextMeshProUGUI _fallbackSummary;
 
     private void Awake()
     {
@@ -68,12 +92,14 @@ public class UIController : MonoBehaviour
         pauseScreen.SetActive(false);
         deathScreen.SetActive(false);
         if (radio != null) radio.SetActive(UpgradeManager.Instance.RadioPurchased);
+        if (newBestBadge != null) newBestBadge.SetActive(false);
 
         BuildScorePopups();
 
-        if (TaxiInput.UseTouchControls)
+        // Scene controls manage their own visibility; only build defaults when none were placed.
+        if (mobileControls == null && TaxiInput.UseTouchControls)
         {
-            _mobileControls = MobileControls.Create(scoreText != null ? scoreText.font : null);
+            _runtimeControls = MobileControls.CreateRuntime(scoreText != null ? scoreText.font : null);
         }
 
         scoreText.SetText("SCORE\nR{0}", gm.Score);
@@ -83,7 +109,7 @@ public class UIController : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
-        if (_mobileControls != null) Destroy(_mobileControls.gameObject);
+        if (_runtimeControls != null) Destroy(_runtimeControls.transform.root.gameObject);
 
         GameManager gm = GameManager.Instance;
         if (gm == null) return;
@@ -107,7 +133,7 @@ public class UIController : MonoBehaviour
         }
 
         UpdateTimer(gm);
-        UpdateNotice(gm);
+        UpdateNotice();
     }
 
     // ---------------------------------------------------------------- HUD
@@ -149,7 +175,7 @@ public class UIController : MonoBehaviour
         }
     }
 
-    private void UpdateNotice(GameManager gm)
+    private void UpdateNotice()
     {
         if (!noPassengersNoticeText.gameObject.activeSelf) return;
 
@@ -177,30 +203,42 @@ public class UIController : MonoBehaviour
 
     private void BuildScorePopups()
     {
-        RectTransform anchor = scoreText.transform.parent as RectTransform;
-        if (anchor == null) return;
+        TextMeshProUGUI template = scorePopupTemplate;
 
-        _popups = new TextMeshProUGUI[popupPoolSize];
-        for (int i = 0; i < popupPoolSize; i++)
+        if (template == null)
         {
-            TextMeshProUGUI popup = RuntimeUI.CreateText("ScorePopup", anchor, string.Empty,
+            // Default: just to the right of the score.
+            RectTransform anchor = scoreText.transform.parent as RectTransform;
+            if (anchor == null) return;
+
+            template = RuntimeUI.CreateText("ScorePopup", anchor, string.Empty,
                 scoreText.fontSize, scoreText.font, gainColor, TextAlignmentOptions.Left);
-            RuntimeUI.Place(popup.rectTransform, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f),
+            RuntimeUI.Place(template.rectTransform, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(20f, 0f), new Vector2(220f, 60f));
-            popup.gameObject.SetActive(false);
-            _popups[i] = popup;
+        }
+
+        template.gameObject.SetActive(false);
+        _popupStart = template.rectTransform.anchoredPosition;
+
+        _popups = new TextMeshProUGUI[Mathf.Max(1, popupPoolSize)];
+        _popups[0] = template;
+        for (int i = 1; i < _popups.Length; i++)
+        {
+            _popups[i] = Instantiate(template, template.transform.parent, false);
+            _popups[i].gameObject.SetActive(false);
         }
     }
 
     private void ShowPopup(int delta)
     {
-        if (_popups == null || _popups.Length == 0 || !isActiveAndEnabled) return;
+        if (_popups == null || !isActiveAndEnabled) return;
 
         TextMeshProUGUI popup = _popups[_nextPopup];
         _nextPopup = (_nextPopup + 1) % _popups.Length;
 
         popup.SetText(delta > 0 ? "+R{0}" : "-R{0}", Mathf.Abs(delta));
         popup.color = delta > 0 ? gainColor : lateColor;
+        popup.rectTransform.anchoredPosition = _popupStart;
         popup.gameObject.SetActive(true);
         StartCoroutine(AnimatePopup(popup));
     }
@@ -214,7 +252,7 @@ public class UIController : MonoBehaviour
         {
             t += Time.deltaTime;
             float k = Mathf.Clamp01(t / popupDuration);
-            rect.anchoredPosition = new Vector2(20f, popupRise * (1f - (1f - k) * (1f - k)));
+            rect.anchoredPosition = _popupStart + new Vector2(0f, popupRise * (1f - (1f - k) * (1f - k)));
             popup.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - k * k);
             yield return null;
         }
@@ -247,20 +285,33 @@ public class UIController : MonoBehaviour
     private void UpdateSummary()
     {
         GameManager gm = GameManager.Instance;
-        if (_summaryText == null) _summaryText = CreateSummaryText();
-        if (_summaryText == null) return;
+        bool isNewBest = gm.LastRunWasHighScore;
+        string reason = gm.LastGameOverReason == GameOverReason.Crashed ? crashedMessage : gaveUpMessage;
+        string fare = string.Format(fareFormat, gm.Score);
+        string best = isNewBest ? newBestMessage : string.Format(bestFormat, Statistics.Instance.HighScore);
 
-        string reason = gm.LastGameOverReason == GameOverReason.Crashed ? "You crashed!" : "Your passengers gave up!";
-        string best = gm.LastRunWasHighScore
-            ? "<color=#FFD21F>NEW BEST!</color>"
-            : $"BEST  R{Statistics.Instance.HighScore}";
+        if (newBestBadge != null) newBestBadge.SetActive(isNewBest);
 
-        _summaryText.text = $"{reason}\nFARE  R{gm.Score}     {best}";
+        bool hasSceneSummary = gameOverReasonText != null || fareText != null || bestText != null;
+        if (hasSceneSummary)
+        {
+            if (gameOverReasonText != null) gameOverReasonText.text = reason;
+            if (fareText != null) fareText.text = fare;
+            if (bestText != null)
+            {
+                bestText.text = best;
+                if (isNewBest) UIPunch.Punch(this, bestText.transform, 0.3f, 0.4f);
+            }
+            return;
+        }
+
+        // Default when nothing is placed in the scene: one line between the title and the buttons.
+        if (_fallbackSummary == null) _fallbackSummary = CreateFallbackSummary();
+        if (_fallbackSummary != null) _fallbackSummary.text = $"{reason}\n{fare}     {best}";
     }
 
-    private TextMeshProUGUI CreateSummaryText()
+    private TextMeshProUGUI CreateFallbackSummary()
     {
-        // Sits between the "GAME OVER" title and the buttons.
         TextMeshProUGUI title = deathScreen.GetComponentInChildren<TextMeshProUGUI>(true);
         if (title == null) return null;
 
@@ -268,7 +319,6 @@ public class UIController : MonoBehaviour
             title.font, Color.white);
         RuntimeUI.Place(summary.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(0f, 158f), new Vector2(1000f, 100f));
-        summary.richText = true;
         return summary;
     }
 
