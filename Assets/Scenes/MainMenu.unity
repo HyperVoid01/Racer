@@ -2501,124 +2501,121 @@ MonoBehaviour:
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Hey taxi
     clip: {fileID: 8300000, guid: 922c3a3265682f247ad84de0653543a8, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Main Menu Music
     clip: {fileID: 8300000, guid: 2c07156bf4d266740b0a1c57396ba8cc, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Taxi Accelerating
     clip: {fileID: 8300000, guid: f7d5e51f8e9047946ba086908f54e3c3, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Taxi braking
     clip: {fileID: 8300000, guid: b67a5d360b392fd459ddbbe50ea04ed5, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: UI Hover
     clip: {fileID: 8300000, guid: 375228de9aca6634ea96df1baaceb4a2, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Whistle
     clip: {fileID: 8300000, guid: 0d203350644e8674a8732485b515cb4c, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Taxi Hooting
     clip: {fileID: 8300000, guid: 5fdde83644578f14c8c1ab2ba74fe119, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Taxi Idle
     clip: {fileID: 8300000, guid: 994642cf8e4b51a43b4e711c3d94315a, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Taxi crash
     clip: {fileID: 8300000, guid: 97b0a6a5104f5a44fa505452895fde3b, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Mouse hover
     clip: {fileID: 8300000, guid: 375228de9aca6634ea96df1baaceb4a2, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Track1
     clip: {fileID: 8300000, guid: a95ccb2103e662a4f9989b2c2b06cec0, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Track2
     clip: {fileID: 8300000, guid: 904afd5f7c86ef648aaf068caef6a907, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Track3
     clip: {fileID: 8300000, guid: 18de983da097b9547abaa6d9531714cf, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Track4
     clip: {fileID: 8300000, guid: 420753b70b06e104c85b30d592696b9c, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Track5
     clip: {fileID: 8300000, guid: d9dab3fab2cc7f94989c4207175da557, type: 3}
     volume: 1
     pitch: 1
     loop: 1
-    source: {fileID: 0}
+    category: 0
   - name: Mama Crash
     clip: {fileID: 8300000, guid: 4cddab34023d0d541a92d5053816d7a4, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Pothole
     clip: {fileID: 8300000, guid: aad16ea68509f2040a9f8a96fe7031e9, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Stop
     clip: {fileID: 8300000, guid: a10dd9d01e823ca40b5bea58a956d215, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
+    category: 0
   - name: Sharp
     clip: {fileID: 8300000, guid: 6619212dbbac77a449fe2acda8025023, type: 3}
     volume: 1
     pitch: 1
     loop: 0
-    source: {fileID: 0}
-  menuVolume: 1
-  radioVolume: 1
-  sfxVolume: 1
+    category: 0
 --- !u!4 &610943088
 Transform:
   m_ObjectHideFlags: 0
@@ -5536,8 +5533,8 @@ Transform:
   m_GameObject: {fileID: 1280128054}
   serializedVersion: 2
   m_LocalRotation: {x: -0.6008479, y: -0.37280262, z: -0.37280262, w: 0.6008479}
-  m_LocalPosition: {x: -64.7, y: -0.72694004, z: 65.6}
-  m_LocalScale: {x: 24.171787, y: 5.996659, z: 15.550848}
+  m_LocalPosition: {x: -43.3, y: -0.72694004, z: 108.8}
+  m_LocalScale: {x: 50.67615, y: 5.996659, z: 15.550848}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 944100752}
@@ -6167,6 +6164,7 @@ MonoBehaviour:
   menuValueText: {fileID: 1285285748}
   radioValueText: {fileID: 443550542}
   sfxValueText: {fileID: 1220684168}
+  quitButton: {fileID: 0}
 --- !u!1 &1447007304
 GameObject:
   m_ObjectHideFlags: 0
@@ -6516,8 +6514,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57646e93a1538da4ca94e2e87c2b5356, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currency: 0
-  highScore: 0
 --- !u!4 &1538844700
 Transform:
   m_ObjectHideFlags: 0
@@ -8704,7 +8700,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 111.1}
+  m_AnchoredPosition: {x: 0, y: 111.1001}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2033775714

@@ -575,6 +575,7 @@ MonoBehaviour:
   - {fileID: 5541622468752631730, guid: 7b7b0ccafc6872e4485cc228eed5236e, type: 3}
   - {fileID: 4909094819840469284, guid: 2b52b5add0bc80945b89478223795174, type: 3}
   - {fileID: 9076006218854457119, guid: c9107d82503035e44a895a5432d435cc, type: 3}
+  popDuration: 0.25
 --- !u!4 &104955498
 Transform:
   m_ObjectHideFlags: 0
@@ -3999,7 +4000,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 768503406}
   m_FillRect: {fileID: 1733187643}
   m_HandleRect: {fileID: 768503405}
@@ -4127,7 +4128,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 1006064366}
   m_FillRect: {fileID: 1449623492}
   m_HandleRect: {fileID: 1006064365}
@@ -4135,7 +4136,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 10
   m_WholeNumbers: 1
-  m_Value: 2
+  m_Value: 10
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4347,6 +4348,12 @@ MonoBehaviour:
   handlingValue: {fileID: 279462194}
   taxiSpinSlider: {fileID: 1978288197}
   taxiSpinPoint: {fileID: 104955496}
+  spinResponse: 10
+  statBarResponse: 6
+  affordableColor: {r: 1, g: 1, b: 1, a: 1}
+  unaffordableColor: {r: 1, g: 0.45, b: 0.4, a: 1}
+  maxedColor: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+  errorColor: {r: 1, g: 0.25, b: 0.2, a: 1}
 --- !u!1 &1368779709
 GameObject:
   m_ObjectHideFlags: 0
@@ -4376,19 +4383,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4528e4620829a9447a925b1290e9ed64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  accelerationModifier: 0
-  decelerationModifier: 0
-  brakingModifier: 0
-  topSpeedModifier: 0
-  strafeSpeedModifier: 0
   accelerationModifierIncrement: 0.1
   decelerationIncrement: 0.15
-  brakingIncrement: 2.5
   topSpeedIncrement: 7
+  brakingIncrement: 2.5
   strafeSpeedIncrement: 1
-  engine: 0
-  rims: 0
-  radioPurchased: 0
   engineUpgradeLimit: 3
   rimsUpgradeLimit: 2
   engineCost: 100
@@ -6168,7 +6167,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 204847469}
   m_FillRect: {fileID: 1517890749}
   m_HandleRect: {fileID: 204847468}
@@ -6176,7 +6175,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 10
   m_WholeNumbers: 1
-  m_Value: 3
+  m_Value: 10
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
