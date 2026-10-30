@@ -1,198 +1,104 @@
-using System;
 using UnityEngine;
-using UnityEngine.UIElements;
-using Random = UnityEngine.Random;
 
+/// <summary>
+/// In-taxi radio (an upgrade). Plays the station tracks, moves to the next track when one ends, and has
+/// play / pause / next / previous buttons. Pausing the game doesn't override the player's own radio pause.
+/// </summary>
 public class Radio : MonoBehaviour
 {
-    [SerializeField] private Button playButton;
-    [SerializeField] private Button pauseButton;
-    [SerializeField] private Button forwardButton;
-    [SerializeField] private Button rewindButton;
-    
-    public int trackIndex = 1;
-    public bool paused = false;
-    
+    private static readonly string[] Tracks = { "Track1", "Track2", "Track3", "Track4", "Track5" };
+
+    [Tooltip("Go to the next song when one finishes (instead of looping it).")]
+    [SerializeField] private bool autoAdvance = true;
+
+    private int _index;
+    private bool _pausedByPlayer;
+    private float _trackStartedAt;
+
+    public string CurrentTrack => Tracks[_index];
+
     private void Start()
     {
-        if (UpgradeManager.Instance.radioPurchased)
+        if (!UpgradeManager.Instance.RadioPurchased)
         {
-            StopTrack();
-            trackIndex = Random.Range(1, 6);
-            PlayTrack(trackIndex);
+            gameObject.SetActive(false);
+            return;
+        }
+
+        foreach (string track in Tracks) AudioManager.SetLoop(track, !autoAdvance);
+
+        _index = Random.Range(0, Tracks.Length);
+        PlayTrack(_index);
+    }
+
+    private void OnDestroy()
+    {
+        foreach (string track in Tracks)
+        {
+            AudioManager.Stop(track);
+            AudioManager.ResetModifiers(track);
         }
     }
 
-    public void Update()
+    private void Update()
     {
-        if (UIController.instance._isPaused)
+        if (!autoAdvance || _pausedByPlayer) return;
+
+        GameManager gm = GameManager.Instance;
+        if (gm == null || gm.IsPaused || gm.IsGameOver) return;
+
+        // Small grace period so a clip that is still loading isn't mistaken for one that finished.
+        if (Time.unscaledTime - _trackStartedAt > 1f && !AudioManager.IsPlaying(CurrentTrack))
         {
-            Pause();
+            PlayTrack(_index + 1);
         }
-        else if (!paused && !UIController.instance._isPaused)
-        {
-            UnPause();
-        }
+    }
+
+    public void PlayTrack(int index)
+    {
+        AudioManager.Stop(CurrentTrack);
+        _index = (index % Tracks.Length + Tracks.Length) % Tracks.Length;
+        AudioManager.Play(CurrentTrack);
+        _pausedByPlayer = false;
+        _trackStartedAt = Time.unscaledTime;
     }
 
     public void StopTrack()
     {
-        switch (trackIndex)
-        {
-            case 1:
-            {
-                AudioManager.Instance.Stop("Track1");
-                break;
-            }
-            case 2:
-            {
-                AudioManager.Instance.Stop("Track2");
-                break;
-            }
-            case 3:
-            {
-                AudioManager.Instance.Stop("Track3");
-                break;
-            }
-            case 4:
-            {
-                AudioManager.Instance.Stop("Track4");
-                break;
-            }
-            case 5:
-            {
-                AudioManager.Instance.Stop("Track5");
-                break;
-            }
-        }
-    }
-
-    public void PlayTrack(int trackIndex)
-    {
-        switch (trackIndex)
-        {
-            case 1:
-            {
-                AudioManager.Instance.Play("Track1");
-                break;
-            }
-            case 2:
-            {
-                AudioManager.Instance.Play("Track2");
-                break;
-            }
-            case 3:
-            {
-                AudioManager.Instance.Play("Track3");
-                break;
-            }
-            case 4:
-            {
-                AudioManager.Instance.Play("Track4");
-                break;
-            }
-            case 5:
-            {
-                AudioManager.Instance.Play("Track5");
-                break;
-            }
-        }
-        paused = false;
+        AudioManager.Stop(CurrentTrack);
     }
 
     public void Forward()
     {
-        StopTrack();
-
-        trackIndex++;
-        
-        if (trackIndex > 5)
-        {
-            trackIndex = 1;
-        }
-        
-        PlayTrack(trackIndex);
+        AudioManager.Play("Button Select");
+        PlayTrack(_index + 1);
     }
 
     public void Rewind()
     {
-        StopTrack();
-        
-        trackIndex--;
-        
-        if (trackIndex < 0)
-        {
-            trackIndex = 5;
-        }
-        
-        PlayTrack(trackIndex);
+        // The original wrapped at < 0 instead of < 1, so one press in five played nothing.
+        AudioManager.Play("Button Select");
+        PlayTrack(_index - 1);
     }
 
+    /// <summary>Pause button.</summary>
     public void Pause()
     {
-        switch (trackIndex)
-        {
-            case 1:
-            {
-                AudioManager.Instance.Pause("Track1");
-                break;
-            }
-            case 2:
-            {
-                AudioManager.Instance.Pause("Track2");
-                break;
-            }
-            case 3:
-            {
-                AudioManager.Instance.Pause("Track3");
-                break;
-            }
-            case 4:
-            {
-                AudioManager.Instance.Pause("Track4");
-                break;
-            }
-            case 5:
-            {
-                AudioManager.Instance.Pause("Track5");
-                break;
-            }
-        }
-        
-        paused = true;
+        AudioManager.Pause(CurrentTrack);
+        _pausedByPlayer = true;
     }
 
+    /// <summary>Play button.</summary>
     public void UnPause()
     {
-        switch (trackIndex)
+        if (_pausedByPlayer)
         {
-            case 1:
-            {
-                AudioManager.Instance.UnPause("Track1");
-                break;
-            }
-            case 2:
-            {
-                AudioManager.Instance.UnPause("Track2");
-                break;
-            }
-            case 3:
-            {
-                AudioManager.Instance.UnPause("Track3");
-                break;
-            }
-            case 4:
-            {
-                AudioManager.Instance.UnPause("Track4");
-                break;
-            }
-            case 5:
-            {
-                AudioManager.Instance.UnPause("Track5");
-                break;
-            }
+            AudioManager.UnPause(CurrentTrack);
+            _pausedByPlayer = false;
         }
-
-        paused = false;
+        else if (!AudioManager.IsPlaying(CurrentTrack))
+        {
+            PlayTrack(_index);
+        }
     }
 }
