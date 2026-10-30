@@ -47,6 +47,8 @@ public class UIController : MonoBehaviour
     [SerializeField] private int popupPoolSize = 6;
     [SerializeField] private float popupRise = 70f;
     [SerializeField] private float popupDuration = 0.8f;
+    [Tooltip("Where message popups (e.g. the horn's \"Move!\") start, relative to the score popups.")]
+    [SerializeField] private Vector2 messagePopupOffset = new Vector2(0f, -55f);
 
     [Header("Touch controls - optional")]
     [SerializeField] private MobileControls mobileControls;
@@ -231,19 +233,46 @@ public class UIController : MonoBehaviour
 
     private void ShowPopup(int delta)
     {
-        if (_popups == null || !isActiveAndEnabled) return;
-
-        TextMeshProUGUI popup = _popups[_nextPopup];
-        _nextPopup = (_nextPopup + 1) % _popups.Length;
+        TextMeshProUGUI popup = NextPopup();
+        if (popup == null) return;
 
         popup.SetText(delta > 0 ? "+R{0}" : "-R{0}", Mathf.Abs(delta));
         popup.color = delta > 0 ? gainColor : lateColor;
-        popup.rectTransform.anchoredPosition = _popupStart;
-        popup.gameObject.SetActive(true);
-        StartCoroutine(AnimatePopup(popup));
+        StartPopup(popup, _popupStart);
     }
 
-    private IEnumerator AnimatePopup(TextMeshProUGUI popup)
+    /// <summary>Floats a short message (e.g. "Move!") up just below where score popups appear.</summary>
+    public void ShowMessage(string message) => ShowMessage(message, warningColor);
+
+    public void ShowMessage(string message, Color color)
+    {
+        if (string.IsNullOrEmpty(message)) return;
+
+        TextMeshProUGUI popup = NextPopup();
+        if (popup == null) return;
+
+        popup.text = message;
+        popup.color = color;
+        StartPopup(popup, _popupStart + messagePopupOffset);
+    }
+
+    private TextMeshProUGUI NextPopup()
+    {
+        if (_popups == null || !isActiveAndEnabled) return null;
+
+        TextMeshProUGUI popup = _popups[_nextPopup];
+        _nextPopup = (_nextPopup + 1) % _popups.Length;
+        return popup;
+    }
+
+    private void StartPopup(TextMeshProUGUI popup, Vector2 start)
+    {
+        popup.rectTransform.anchoredPosition = start;
+        popup.gameObject.SetActive(true);
+        StartCoroutine(AnimatePopup(popup, start));
+    }
+
+    private IEnumerator AnimatePopup(TextMeshProUGUI popup, Vector2 start)
     {
         RectTransform rect = popup.rectTransform;
         Color baseColor = popup.color;
@@ -252,7 +281,7 @@ public class UIController : MonoBehaviour
         {
             t += Time.deltaTime;
             float k = Mathf.Clamp01(t / popupDuration);
-            rect.anchoredPosition = _popupStart + new Vector2(0f, popupRise * (1f - (1f - k) * (1f - k)));
+            rect.anchoredPosition = start + new Vector2(0f, popupRise * (1f - (1f - k) * (1f - k)));
             popup.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - k * k);
             yield return null;
         }

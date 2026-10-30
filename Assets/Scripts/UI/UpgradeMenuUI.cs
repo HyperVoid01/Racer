@@ -84,7 +84,7 @@ public class UpgradeMenuUI : MonoBehaviour
 
     private void Update()
     {
-        SpinTaxi();
+        //SpinTaxi();
         AnimateStatBars();
     }
 

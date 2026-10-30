@@ -50,6 +50,28 @@ public class UpgradeManager : MonoBehaviour
     [Header("Cost growth per level")]
     public float costMultiplier = 1.5f;
 
+    [Header("Testing")]
+    [Tooltip("Every upgrade is affordable and buying never spends cash. " +
+             "Only works in the editor and development builds; ignored in release builds.")]
+    [SerializeField] private bool unlimitedMoney;
+
+    /// <summary>
+    /// True when the testing toggle is on. Always false in release builds, so it can't ship enabled.
+    /// The field itself stays outside the #if so the serialized layout is identical in every build.
+    /// </summary>
+    public bool UnlimitedMoney
+    {
+        get
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return unlimitedMoney;
+#else
+            return false;
+#endif
+        }
+        set => unlimitedMoney = value;
+    }
+
     /// <summary>Check this (not Instance) from OnDestroy, so no object is created while the app is closing.</summary>
     public static bool Exists => _instance != null;
 
@@ -77,6 +99,11 @@ public class UpgradeManager : MonoBehaviour
 
         _instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (UnlimitedMoney)
+        {
+            Debug.LogWarning("[UpgradeManager] Unlimited money is ON (testing only).");
+        }
     }
 
     private void OnDestroy()
@@ -116,12 +143,16 @@ public class UpgradeManager : MonoBehaviour
         return cost;
     }
 
-    public bool CanAfford(UpgradeType type) => !IsMaxed(type) && Statistics.Instance.CanAfford(GetCost(type));
+    public bool CanAfford(UpgradeType type)
+    {
+        if (IsMaxed(type)) return false;
+        return UnlimitedMoney || Statistics.Instance.CanAfford(GetCost(type));
+    }
 
     public bool TryPurchase(UpgradeType type)
     {
         if (IsMaxed(type)) return false;
-        if (!Statistics.Instance.TrySpend(GetCost(type))) return false;
+        if (!UnlimitedMoney && !Statistics.Instance.TrySpend(GetCost(type))) return false;
 
         SaveData data = SaveSystem.Data;
         switch (type)
@@ -134,6 +165,29 @@ public class UpgradeManager : MonoBehaviour
         SaveSystem.Save();
         Upgraded?.Invoke(type);
         return true;
+    }
+
+    // ── Testing ────────────────────────────────────────────────────────────
+    // Right-click the UpgradeManager component header (or its ⋮ menu) in the Inspector to run these.
+
+    [ContextMenu("Testing/Reset Progress (keep settings)")]
+    private void ResetProgressFromInspector()
+    {
+        SaveSystem.ResetProgress();
+        Debug.Log("[UpgradeManager] Progress reset: cash, high score, runs and upgrades cleared. Settings kept.");
+        if (Application.isPlaying)
+        {
+            Debug.Log("[UpgradeManager] Re-enter the garage or restart Play mode to see the reset reflected in the UI.");
+        }
+    }
+
+    [ContextMenu("Testing/Delete Entire Save (incl. settings)")]
+    private void DeleteSaveFromInspector()
+    {
+        PlayerPrefs.DeleteKey("MzansiRush.Save");
+        PlayerPrefs.Save();
+        SaveSystem.Load(); // no key any more, so this starts a fresh SaveData
+        Debug.Log("[UpgradeManager] Save deleted. Everything, including volume and haptics settings, is back to default.");
     }
 
     // Kept for compatibility with any existing button bindings.

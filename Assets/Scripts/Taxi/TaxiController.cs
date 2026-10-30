@@ -41,6 +41,7 @@ public class TaxiController : MonoBehaviour
 
     private Rigidbody _rigidbody;
     private Collider _collider;
+    private TaxiHorn _horn;
     private int _leftWallContacts;
     private int _rightWallContacts;
 
@@ -71,6 +72,7 @@ public class TaxiController : MonoBehaviour
         _rigidbody.useGravity = false;
 
         if (!TryGetComponent(out TaxiEngineAudio _)) gameObject.AddComponent<TaxiEngineAudio>();
+        if (!TryGetComponent(out _horn)) _horn = gameObject.AddComponent<TaxiHorn>();
 
         TaxiVisuals visuals = GetComponentInChildren<TaxiVisuals>();
         if (visuals != null && !visuals.TryGetComponent(out TaxiFeel _))
@@ -102,7 +104,7 @@ public class TaxiController : MonoBehaviour
         GameManager gm = GameManager.Instance;
         if (gm.IsGameOver || gm.IsPaused) return;
 
-        if (TaxiInput.ConsumeHornPress()) AudioManager.Play("Taxi Hooting");
+        if (TaxiInput.ConsumeHornPress()) _horn.Hoot();
 
         float dt = Time.deltaTime;
 
