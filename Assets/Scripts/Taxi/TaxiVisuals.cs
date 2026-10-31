@@ -15,7 +15,12 @@ public class TaxiVisuals : MonoBehaviour
     [SerializeField] private float popDuration = 0.25f;
 
     private GameObject _currentModel;
+    private Coroutine _pop;
 
+    /// <summary>The spawned model, or null before the first refresh.</summary>
+    public GameObject CurrentModel => _currentModel;
+
+    /// <summary>Raised right after a new model is spawned, before any pop animation scales it.</summary>
     public event Action ModelChanged;
 
     private void Awake()
@@ -40,13 +45,21 @@ public class TaxiVisuals : MonoBehaviour
     {
         if (taxiPrefabs == null || taxiPrefabs.Length == 0) return;
 
+        if (_pop != null)
+        {
+            StopCoroutine(_pop);
+            _pop = null;
+        }
+
         if (_currentModel != null) Destroy(_currentModel);
 
         int index = Mathf.Clamp(UpgradeManager.Instance.RimsLevel, 0, taxiPrefabs.Length - 1);
         _currentModel = Instantiate(taxiPrefabs[index], transform, false);
 
-        if (animate && isActiveAndEnabled) StartCoroutine(Pop(_currentModel.transform));
+        // Listeners (e.g. TaxiWheels) read the model at its real scale, so notify before the pop starts.
         ModelChanged?.Invoke();
+
+        if (animate && isActiveAndEnabled) _pop = StartCoroutine(Pop(_currentModel.transform));
     }
 
     private IEnumerator Pop(Transform model)
@@ -63,5 +76,6 @@ public class TaxiVisuals : MonoBehaviour
             yield return null;
         }
         if (model != null) model.localScale = baseScale;
+        _pop = null;
     }
 }

@@ -75,9 +75,11 @@ public class TaxiController : MonoBehaviour
         if (!TryGetComponent(out _horn)) _horn = gameObject.AddComponent<TaxiHorn>();
 
         TaxiVisuals visuals = GetComponentInChildren<TaxiVisuals>();
-        if (visuals != null && !visuals.TryGetComponent(out TaxiFeel _))
+        if (visuals != null)
         {
-            visuals.gameObject.AddComponent<TaxiFeel>();
+            if (!visuals.TryGetComponent(out TaxiFeel _)) visuals.gameObject.AddComponent<TaxiFeel>();
+            // Spinning, steering wheels that stay planted while TaxiFeel moves the body.
+            if (!visuals.TryGetComponent(out TaxiWheels _)) visuals.gameObject.AddComponent<TaxiWheels>();
         }
     }
 
