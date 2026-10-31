@@ -23,7 +23,10 @@ public class Bootstrap : MonoBehaviour
     {
         SaveSystem.Load();
 
+#if ENABLE_LEGACY_INPUT_MANAGER
+        // The Input System package always tracks every touch; only the legacy Input class needs this.
         Input.multiTouchEnabled = true;
+#endif
 
         if (IsMobile)
         {

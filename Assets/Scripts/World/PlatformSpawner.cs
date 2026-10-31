@@ -3,7 +3,8 @@ using UnityEngine.Serialization;
 
 /// <summary>
 /// Keeps the road filled up to <see cref="spawnAheadZ"/>. Every <see cref="taxiStopInterval"/> pieces,
-/// a taxi stop is placed instead of a regular piece.
+/// a taxi stop is placed instead of a regular piece. Also makes sure the main camera has a
+/// <see cref="WorldFog"/>, which hides pieces as they appear.
 /// </summary>
 public class PlatformSpawner : MonoBehaviour
 {
@@ -11,7 +12,7 @@ public class PlatformSpawner : MonoBehaviour
 
     [SerializeField] private GameObject[] platformPrefabs;
     [SerializeField] private GameObject taxiStopPrefab;
-    [Tooltip("Road is generated until it reaches this Z.")]
+    [Tooltip("Road is generated until it reaches this Z. The fog is fitted to this distance by WorldFog.")]
     [FormerlySerializedAs("spawnerDistance")]
     [SerializeField] private float spawnAheadZ = 300f;
     [Tooltip("Regular road pieces between taxi stops.")]
@@ -22,6 +23,9 @@ public class PlatformSpawner : MonoBehaviour
     private Transform _connectionPoint;
     private int _piecesSinceStop;
     private int _lastPrefabIndex = -1;
+
+    /// <summary>The Z up to which road is generated. New pieces appear just short of this line.</summary>
+    public float SpawnAheadZ => spawnAheadZ;
 
     private void Awake()
     {
@@ -40,6 +44,8 @@ public class PlatformSpawner : MonoBehaviour
 
     private void Start()
     {
+        EnsureWorldFog();
+
         if (platformPrefabs == null || platformPrefabs.Length == 0)
         {
             Debug.LogError("[PlatformSpawner] No platform prefabs assigned.", this);
@@ -60,6 +66,15 @@ public class PlatformSpawner : MonoBehaviour
     {
         if (_connectionPoint == null) return;
         FillRoad();
+    }
+
+    private static void EnsureWorldFog()
+    {
+        Camera cam = Camera.main;
+        if (cam != null && !cam.TryGetComponent(out WorldFog _))
+        {
+            cam.gameObject.AddComponent<WorldFog>();
+        }
     }
 
     private void FillRoad()

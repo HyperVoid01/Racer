@@ -43,12 +43,17 @@ public class Statistics : MonoBehaviour
 
         _instance = this;
         DontDestroyOnLoad(gameObject);
+        SaveSystem.ProgressReset += OnProgressReset;
     }
 
     private void OnDestroy()
     {
-        if (_instance == this) _instance = null;
+        if (_instance != this) return;
+        SaveSystem.ProgressReset -= OnProgressReset;
+        _instance = null;
     }
+
+    private void OnProgressReset() => CurrencyChanged?.Invoke(Currency);
 
     public bool CanAfford(int cost) => Currency >= cost;
 

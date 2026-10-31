@@ -40,6 +40,9 @@ public static class SaveSystem
     private static SaveData _data;
     private static bool _dirty;
 
+    /// <summary>Raised after <see cref="ResetProgress"/>, so anything showing cash or records can refresh.</summary>
+    public static event Action ProgressReset;
+
     public static SaveData Data
     {
         get
@@ -97,5 +100,6 @@ public static class SaveSystem
             hapticsEnabled = old.hapticsEnabled
         };
         Save();
+        ProgressReset?.Invoke();
     }
 }
